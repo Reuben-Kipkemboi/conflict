@@ -28,6 +28,7 @@ use yii\helpers\Url;
             },
             // 'contentOptions' => ['class' => 'text-center'],
         ],
+
         [
             'class' => ActionColumn::className(),
             'template' => '{update} {view}',

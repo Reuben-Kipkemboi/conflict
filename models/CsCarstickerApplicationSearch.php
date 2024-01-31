@@ -6,14 +6,13 @@ use yii\base\Model;
 use yii\data\ActiveDataProvider;
 use app\modules\stickers\models\CsCarstickerApplication;
 
-/**
- * CsCarstickerApplicationSearch represents the model behind the search form of `app\modules\stickers\models\CsCarstickerApplication`.
- */
+
 class CsCarstickerApplicationSearch extends CsCarstickerApplication
 {
     /**
      * {@inheritdoc}
      */
+
     public function rules()
     {
         return [
@@ -21,7 +20,6 @@ class CsCarstickerApplicationSearch extends CsCarstickerApplication
             [['application_ref_no', 'vehicle_regno', 'application_date'], 'safe'],
         ];
     }
-
     /**
      * {@inheritdoc}
      */
@@ -52,15 +50,18 @@ class CsCarstickerApplicationSearch extends CsCarstickerApplication
             'query' => $query,
         ]);
 
+
         $this->load($params);
 
         if (!$this->validate()) {
+
             // Uncomment the following line if you do not want to return any records when validation fails
             // $query->where('0=1');
             return $dataProvider;
         }
 
         // Grid filtering conditions
+
         $query->andFilterWhere([
             'application_id' => $this->application_id,
             'application_date' => $this->application_date,
@@ -69,6 +70,12 @@ class CsCarstickerApplicationSearch extends CsCarstickerApplication
 
         $query->andFilterWhere(['ilike', 'application_ref_no', $this->application_ref_no])
             ->andFilterWhere(['ilike', 'vehicle_regno', $this->vehicle_regno]);
+
+
+//             if ($statusId !== null) {
+//                 $query->leftJoin('cs_carsticker_approval "latestApproval"', 'cs_carsticker_application.application_id = "latestApproval".application_id');
+//                 $query->andWhere(['latestApproval.status_id' => $statusId]);
+//             }
 
         // Apply additional conditions
         $query->andWhere($additionalConditions);
@@ -82,6 +89,7 @@ class CsCarstickerApplicationSearch extends CsCarstickerApplication
         if (isset($additionalConditions['status_id'])) {
             $query->andWhere(['csmis.cs_carsticker_approval.status_id' => $additionalConditions['status_id']]);
         }
+
 
         return $dataProvider;
     }

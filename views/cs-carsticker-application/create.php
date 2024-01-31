@@ -34,6 +34,7 @@ $this->params['breadcrumbs'][] = $this->title;
 <div class="cs-carsticker-application-create">
 
     <h3 class="text-center text-primary"><?= Html::encode($this->title) ?></h3>
+
     <h5 class="text-danger text-center">Please ensure you attach all documents as a single PDF file when submitting.</h5>
     <?= $this->render('_form', [
     'model' => $model,

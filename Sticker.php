@@ -5,6 +5,7 @@ namespace app\modules\stickers;
 /**
  * stickers module definition class
  */
+
 class Sticker extends \yii\base\Module
 {
     /**

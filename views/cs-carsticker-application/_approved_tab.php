@@ -26,8 +26,7 @@ use yii\helpers\Url;
                 // return date('Y-m-d', strtotime($model->application_date));
                 return date('F j, Y', strtotime($model->application_date));
             },
-        ],
-        // 'applicationType.application_type',
+
         [
             'class' => ActionColumn::className(),
             'template' => '{update} {view}',
@@ -38,10 +37,12 @@ use yii\helpers\Url;
                 return Url::toRoute([$action, 'application_id' => $model->application_id]);
             },
 
+
             'buttons' => [
                 'update' => function ($url, $model, $key) {
                     if ($model->isUpdateDisabled()) {
                         return Html::tag('span', 'Update', ['class' => 'bi bi-pencil-square btn btn-outline-primary btn-sm', 'style' => 'visibility: hidden;']);
+
                     }
                     return Html::a('Update', ['/stickers/cs-carsticker-application/update', 'application_id' => $model->application_id], ['class' => 'bi bi-pencil-square btn btn-outline-primary btn-sm']);
                 },
