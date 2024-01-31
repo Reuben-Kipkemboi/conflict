@@ -22,8 +22,9 @@ use yii\bootstrap4\Alert;
         </div>
 
         <div class="form-group">
-            <?= $form->field($model, 'vehicle_regno')->textInput(['maxlength' => true])->label('Vehicle Registration Number', ['class' => 'mb-2 fw-bold']) ?>
-            
+
+            <?= $form->field($model, 'vehicle_regno')->textInput(['maxlength' => true, 'oninput' => 'this.value = this.value.toUpperCase()',])->label('Vehicle Registration Number', ['class' => 'mb-2 fw-bold']) ?>
+
         </div>
 
         <div class="form-group">
@@ -33,7 +34,9 @@ use yii\bootstrap4\Alert;
                     'autoclose' => true,
                     'format' => 'yyyy-mm-dd',
                     'todayHighlight' => true,
+
                     'startDate' => date('Y-m-d'),
+
                     'endDate' => date('Y-m-d'),
                 ],
                 'value' => date('Y-m-d H:i:s'),
@@ -72,7 +75,9 @@ use yii\bootstrap4\Alert;
                 'Save Vehicle Details and Forward for Approval >>',
                 [
                     'class' => 'btn btn-primary',
-                    'disabled' => $isUpdateDisabled || !$model->isNewRecord ? 'disabled' : null,
+
+
+                    // 'disabled' => $isUpdateDisabled || !$model->isNewRecord ? 'disabled' : null,
                 ]
             ) ?>
         </div>

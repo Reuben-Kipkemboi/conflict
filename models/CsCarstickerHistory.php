@@ -36,7 +36,9 @@ class CsCarstickerHistory extends \yii\db\ActiveRecord
             [['application_id', 'attended_by', 'level_id', 'status_id'], 'integer'],
             [['history_date'], 'safe'],
             [['remark'], 'string', 'max' => 100],
-            [['application_id'], 'exist', 'skipOnError' => true, 'targetClass' => CsmisCsCarstickerApplication::class, 'targetAttribute' => ['application_id' => 'application_id']],
+
+            [['application_id'], 'exist', 'skipOnError' => true, 'targetClass' => CsCarstickerApplication::class, 'targetAttribute' => ['application_id' => 'application_id']],
+
         ];
     }
 

@@ -1,6 +1,7 @@
 <?php
 
 use app\modules\stickers\models\CsCarstickerApplicationSearchDirector;
+
 use app\modules\stickers\models\CsCarstickerApplication;
 use yii\helpers\Html;
 use yii\helpers\Url;
@@ -9,6 +10,7 @@ use kartik\grid\GridView;
 use yii\web\Response;
 use yii\grid\ActionColumn;
 use app\modules\approval\models\CsCarstickerApproval;
+
 
 /** @var yii\web\View $this */
 /** @var app\modules\stickers\models\CsCarstickerApplicationSearchDirector $searchModel */
@@ -263,6 +265,41 @@ JS;
 <?php // echo $this->render('_search', ['model' => $searchModel]); ?>
    <?= GridView::widget($gridViewOptions); ?>
 
+            <h1>
+                <?= Html::encode($this->title) ?>
+            </h1>
+
+
+            <div class="d-flex justify-content-end mb-2">
+                <?= Html::button('Revoke Applications', ['class' => 'btn btn-lg btn-danger mx-3', 'id' => 'revoke-applications']) ?>
+                <?= Html::button('Approve Applications', ['class' => 'btn btn-lg btn-primary mx-3', 'id' => 'approve-applications']) ?>
+                <?php
+                $approvalUrl = Url::to(['stickers/cs-carsticker-application/approve-applications']);
+                $approval = json_encode($approvalUrl);
+
+                ?>
+
+
+            </div>
+            <?php
+            $gridViewOptions = [
+                'dataProvider' => $dataProvider,
+                'filterModel' => $searchModel,
+                'columns' => [
+                    ['class' => 'yii\grid\SerialColumn'],
+                    ['class' => 'yii\grid\CheckboxColumn'],
+                    'application_ref_no',
+                    'vehicle_regno',
+                    'application_date',
+                ],
+            ];
+            ?>
+
+
+            <?php // echo $this->render('_search', ['model' => $searchModel]); ?>
+            <?= GridView::widget($gridViewOptions); ?>
+
+
         </div>
     </div>
 </div>
@@ -309,6 +346,7 @@ $(document).ready(function () {
                 data: { selectedIds: selectedIds },
                 success: function(response) {
                     alert('Application(s) succesfully approved for the carsticker');
+
                 window.location.reload();
                 },
                 error: function(xhr, status, error) {
@@ -318,6 +356,7 @@ $(document).ready(function () {
             }
         }
     });
+
 
     $('#review-applications').on('click', function() {
         if (selectedIds.length === 0) {
@@ -331,6 +370,19 @@ $(document).ready(function () {
                 data: { selectedIds: selectedIds },
                 success: function(response) {
                     alert('Applications succesfully reviewed to applicant');
+
+    $('#revoke-applications').on('click', function() {
+        if (selectedIds.length === 0) {
+            alert('No Applications selected.');
+        } else {
+            var confirmed = confirm("Are you sure you want to REVOKE the application(s)?");
+            if(confirmed){
+            $.ajax({
+                url: 'http://csmis-dev.uonbi.ac.ke/index.php?r=stickers/cs-carsticker-application/revoke-applications',
+                method: 'POST',
+                data: { selectedIds: selectedIds },
+                success: function(response) {
+                    alert('Revocation succesful');
                 window.location.reload();
                 },
                 error: function(xhr, status, error) {
@@ -347,7 +399,9 @@ $(document).ready(function () {
 JS;
 
 $this->registerJs($script);
+
 ?>
+
 
 
 

@@ -19,8 +19,16 @@ use yii\helpers\Url;
         ['class' => 'kartik\grid\SerialColumn'],
         'application_ref_no',
         'vehicle_regno',
-        'application_date',
-        'applicationType.application_type',
+        // 'application_date',
+        [
+            'attribute' => 'application_date',
+            'value' => function ($model) {
+                // return date('Y-m-d', strtotime($model->application_date));
+                return date('F j, Y', strtotime($model->application_date));
+            },
+            // 'contentOptions' => ['class' => 'text-center'],
+        ],
+
         [
             'class' => ActionColumn::className(),
             'template' => '{update} {view}',

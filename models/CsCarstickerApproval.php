@@ -36,9 +36,9 @@ class CsCarstickerApproval extends \yii\db\ActiveRecord
             [['level_id', 'status_id', 'user_id', 'application_id'], 'default', 'value' => null],
             [['level_id', 'status_id', 'user_id', 'application_id'], 'integer'],
             [['remark'], 'string', 'max' => 100],
-            [['level_id'], 'exist', 'skipOnError' => true, 'targetClass' => CsmisCsApprovalLevel::class, 'targetAttribute' => ['level_id' => 'level_id']],
-            [['status_id'], 'exist', 'skipOnError' => true, 'targetClass' => CsmisCsApprovalStatus::class, 'targetAttribute' => ['status_id' => 'status_id']],
-            [['application_id'], 'exist', 'skipOnError' => true, 'targetClass' => CsmisCsCarstickerApplication::class, 'targetAttribute' => ['application_id' => 'application_id']],
+            [['level_id'], 'exist', 'skipOnError' => true, 'targetClass' => CsApprovalLevel::class, 'targetAttribute' => ['level_id' => 'level_id']],
+            [['status_id'], 'exist', 'skipOnError' => true, 'targetClass' => CsApprovalStatus::class, 'targetAttribute' => ['status_id' => 'status_id']],
+            [['application_id'], 'exist', 'skipOnError' => true, 'targetClass' => CsCarstickerApplication::class, 'targetAttribute' => ['application_id' => 'application_id']],
         ];
     }
 

@@ -10,9 +10,7 @@ use app\modules\approval\models\CsCarstickerApproval;
 use app\modules\stickers\models\CsApplicationDocument;
 use yii\web\Response;
 use yii\helpers\Url;
-
 use Yii;
-
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
@@ -52,39 +50,62 @@ class CsCarstickerApplicationController extends Controller
         $searchModel = new CsCarstickerApplicationSearch();
         $dataProvider = $searchModel->search($this->request->queryParams);
 
+
         // // Get the currently logged-in user ID
         // $userId = Yii::$app->user->id;
+
         // Dummy user ID
         $dummyUserId = 1;
 
         // Fetch the models from the dataProvider
-    $models = $dataProvider->getModels();
+//     $models = $dataProvider->getModels();
 
-    // Check the status_id for each model and set $isUpdateDisabled
-    $isUpdateDisabled = false; // Default value
-    foreach ($models as $model) {
-        $latestApproval = CsCarstickerApproval::find()
-            ->where(['application_id' => $model->application_id])
-            ->orderBy(['approval_date' => SORT_DESC])
-            ->one();
+//     // Check the status_id for each model and set $isUpdateDisabled
+//     $isUpdateDisabled = false; // Default value
+//     foreach ($models as $model) {
+//         $latestApproval = CsCarstickerApproval::find()
+//             ->where(['application_id' => $model->application_id])
+//             ->orderBy(['approval_date' => SORT_DESC])
+//             ->one();
 
-        // Check if the latest approval status is one of the statuses that should disable the update
-        $disableUpdateStatuses = [3, 4, 5];
-        if ($latestApproval && in_array($latestApproval->status_id, $disableUpdateStatuses)) {
-            $isUpdateDisabled = true; // Set to true if any model has a status in [3, 4, 5]
-            break; // No need to check further once we find a disabled status
+//         // Check if the latest approval status is one of the statuses that should disable the update
+//         $disableUpdateStatuses = [3, 4, 5];
+//         if ($latestApproval && in_array($latestApproval->status_id, $disableUpdateStatuses)) {
+//             $isUpdateDisabled = true; // Set to true if any model has a status in [3, 4, 5]
+//             break; // No need to check further once we find a disabled status
+//         }
+//     }
+//         // Filter the dataProvider based on the dummy user's ID
+//         $dataProvider->query->andWhere(['user_id' => $dummyUserId]);
+        $models = $dataProvider->getModels();
+
+        // Check the status_id for each model and set $isUpdateDisabled
+        $isUpdateDisabled = false; // Default value
+        foreach ($models as $model) {
+            $latestApproval = CsCarstickerApproval::find()
+                ->where(['application_id' => $model->application_id])
+                ->orderBy(['approval_date' => SORT_DESC])
+                ->one();
+
+            // Check if the latest approval status is one of the statuses that should disable the update
+            $disableUpdateStatuses = [3, 4, 5];
+            if ($latestApproval && in_array($latestApproval->status_id, $disableUpdateStatuses)) {
+                $isUpdateDisabled = true;
+                break;
+            }
         }
-    }
-        // Filter the dataProvider based on the dummy user's ID
-        $dataProvider->query->andWhere(['user_id' => $dummyUserId]);
+
+        // Expired applications
+        $dataProviderExpired = $searchModel->search(['expired' => true] + Yii::$app->request->queryParams);
+
 
         return $this->render('index', [
             'searchModel' => $searchModel,
             'dataProvider' => $dataProvider,
+            'dataProviderExpired' => $dataProviderExpired,
             'isUpdateDisabled' => $isUpdateDisabled,
         ]);
     }
-
 
 public function actionDirector()
     {
@@ -96,8 +117,6 @@ public function actionDirector()
             'dataProvider' => $dataProvider,
         ]);
     }
-
-    
 
     /**
      * Displays a single CsCarstickerApplication model.
@@ -131,10 +150,44 @@ public function actionDirector()
         $documentModel = new CsApplicationDocument();
 
         // Set $isUpdateDisabled to false for create action
-    $isUpdateDisabled = false;
+//     $isUpdateDisabled = false;
 
         // USER ID TO USE TEMPORARILY
         $temporaryUserId = 1;
+        $isUpdateDisabled = false;
+
+        // USER ID TO USE TEMPORARILY
+        $temporaryUserId = 7;
+
+        // Check if the user has two or more stickers with validity_id 5
+        $activeStickerCount = CarstickerQrcode::find()
+            ->where([
+                'user_id' => $temporaryUserId,
+                'validity_id' => 5,
+            ])
+            ->count();
+
+        // Check if the user has more than two active stickers
+        if ($activeStickerCount >= 2) {
+            Yii::$app->session->setFlash('growl', [
+                'type' => Growl::TYPE_DANGER,
+                'icon' => 'bi bi-exclamation-triangle-fill',
+                'title' => 'Failed Application!',
+                'message' => 'You cannot have more than Two Valid Car stickers at a Time.',
+                'showSeparator' => true,
+                'delay' => 5000,
+                'pluginOptions' => [
+                    'showProgressbar' => true,
+                    'placement' => [
+                        'from' => 'top',
+                        'align' => 'center',
+                    ],
+                ],
+            ]);
+
+            
+            return $this->redirect(['index']);
+        }
 
         if ($this->request->isPost) {
             $model->load($this->request->post());
@@ -151,6 +204,14 @@ public function actionDirector()
                     $extension = $documentModel->file->extension;
                     $filePath = 'uploads/documents/' . $fileName . '.' . $extension;
                     $model->file = $filePath;
+
+            $documentModel->file = UploadedFile::getInstance($documentModel, 'file');
+
+            if ($model->validate() && $model->save()) {
+                if ($documentModel->file) {
+                    $fileName = $model->application_ref_no . '_' . 'application_' . $model->application_id;
+                    $extension = $documentModel->file->extension;
+                    $filePath = 'uploads/' . $fileName . '.' . $extension;
                     $documentModel->document_location = $filePath;
                     $documentModel->application_id = $model->application_id;
 
@@ -158,6 +219,7 @@ public function actionDirector()
                         // Forward for approval after saving the model and document
                         $this->forwardApplicationForApproval($model->application_id);
                         $documentModel->file->saveAs($filePath);
+
                         Yii::$app->session->setFlash('growl', [
                             'type' => Growl::TYPE_SUCCESS,
                             'icon' => 'bi bi-check-lg',
@@ -175,8 +237,6 @@ public function actionDirector()
                                 'timer' => 1000,
                             ],
                         ]);
-
-                        // return $this->redirect(['view', 'application_id' => $model->application_id]);
                         return $this->redirect(['index']);
                     } else {
                         Yii::$app->session->setFlash('error', 'Failed to save document. Please check the form for errors.');
@@ -199,7 +259,6 @@ public function actionDirector()
             'isUpdateDisabled' => $isUpdateDisabled,
             'modelErrors' => isset($modelErrors) ? $modelErrors : [],
             'documentErrors' => isset($documentErrors) ? $documentErrors : [],
-            
         ]);
     }
     /**
@@ -226,53 +285,100 @@ public function actionDirector()
     // }
     // CsCarstickerApplicationController.php
 
+//     public function actionUpdate($application_id)
+// {
+//     $model = $this->findModel($application_id);
+//     $documentModel = new CsApplicationDocument();
+
+//     // Retrieve the latest approval
+//     $latestApproval = CsCarstickerApproval::find()
+//         ->where(['application_id' => $model->application_id])
+//         ->orderBy(['approval_date' => SORT_DESC])
+//         ->one();
+
+//     // This is to check if the latest approval status is one of the statuses that should disable the update
+//     $disableUpdateStatuses = [3, 4, 5]; // Status IDs that should disable the update button
+//     $isUpdateDisabled = $latestApproval && in_array($latestApproval->status_id, $disableUpdateStatuses);
+
+//     if ($this->request->isPost) {
+//         $postData = $this->request->post();
+
+//         // Load the application model with the posted data
+//         if ($model->load($postData)) {
+//             // Check if the application is in a status that allows updates
+//             if ($latestApproval && $latestApproval->status_id == 2) {
+//                 // Save the updated application
+//                 if ($model->save()) {
+//                     // Forward for approval again
+//                     $this->forwardApplicationForApproval($model->application_id);
+
+//                     Yii::$app->session->setFlash('success', 'Application updated and forwarded for approval.');
+//                     return $this->redirect(['index']);
+//                 } else {
+//                     Yii::$app->session->setFlash('error', 'Failed to update the application. Please check the form for errors.');
+//                 }
+//             } else {
+//                 Yii::$app->session->setFlash('error', 'This application cannot be updated at the current status.');
+//             }
+//         } else {
+//             Yii::$app->session->setFlash('error', 'Failed to load application data. Please try again.');
+//         }
+//     }
+
+//     return $this->render('update', [
+//         'model' => $model,
+//         'documentModel' => $documentModel,
+//         'latestApproval' => $latestApproval,
+//         'isUpdateDisabled' => $isUpdateDisabled,
+//     ]);
+// }
     public function actionUpdate($application_id)
-{
-    $model = $this->findModel($application_id);
-    $documentModel = new CsApplicationDocument();
+    {
+        $model = $this->findModel($application_id);
+        $documentModel = new CsApplicationDocument();
 
-    // Retrieve the latest approval
-    $latestApproval = CsCarstickerApproval::find()
-        ->where(['application_id' => $model->application_id])
-        ->orderBy(['approval_date' => SORT_DESC])
-        ->one();
+        $latestApproval = CsCarstickerApproval::find()
+            ->where(['application_id' => $model->application_id])
+            ->orderBy(['approval_date' => SORT_DESC])
+            ->one();
 
-    // This is to check if the latest approval status is one of the statuses that should disable the update
-    $disableUpdateStatuses = [3, 4, 5]; // Status IDs that should disable the update button
-    $isUpdateDisabled = $latestApproval && in_array($latestApproval->status_id, $disableUpdateStatuses);
+        // This is to check if the latest approval status is one of the statuses that should disable the update
+        $disableUpdateStatuses = [4, 5];
+        $isUpdateDisabled = $latestApproval && in_array($latestApproval->status_id, $disableUpdateStatuses);
 
-    if ($this->request->isPost) {
-        $postData = $this->request->post();
+        if ($this->request->isPost) {
+            $postData = $this->request->post();
 
-        // Load the application model with the posted data
-        if ($model->load($postData)) {
-            // Check if the application is in a status that allows updates
-            if ($latestApproval && $latestApproval->status_id == 2) {
-                // Save the updated application
-                if ($model->save()) {
-                    // Forward for approval again
-                    $this->forwardApplicationForApproval($model->application_id);
+            // Load the application model with the posted data
+            if ($model->load($postData)) {
+                // Check if the application is in a status that allows updates
+                if ($latestApproval && ($latestApproval->status_id == 1 || $latestApproval->status_id == 2 || $latestApproval->status_id == 3)) {
+                    // Save the updated application
+                    if ($model->save()) {
+                        // Forward for approval again
+                        $this->forwardApplicationForApproval($model->application_id);
 
-                    Yii::$app->session->setFlash('success', 'Application updated and forwarded for approval.');
-                    return $this->redirect(['index']);
+                        Yii::$app->session->setFlash('success', 'Application updated and forwarded for approval.');
+                        return $this->redirect(['index']);
+                    } else {
+                        Yii::$app->session->setFlash('error', 'Failed to update the application. Please check the form for errors.');
+                    }
                 } else {
-                    Yii::$app->session->setFlash('error', 'Failed to update the application. Please check the form for errors.');
+                    Yii::$app->session->setFlash('error', 'This application cannot be updated at the current status.');
                 }
             } else {
-                Yii::$app->session->setFlash('error', 'This application cannot be updated at the current status.');
+                Yii::$app->session->setFlash('error', 'Failed to load application data. Please try again.');
             }
-        } else {
-            Yii::$app->session->setFlash('error', 'Failed to load application data. Please try again.');
         }
+
+        return $this->render('update', [
+            'model' => $model,
+            'documentModel' => $documentModel,
+            'latestApproval' => $latestApproval,
+            'isUpdateDisabled' => $isUpdateDisabled,
+        ]);
     }
 
-    return $this->render('update', [
-        'model' => $model,
-        'documentModel' => $documentModel,
-        'latestApproval' => $latestApproval,
-        'isUpdateDisabled' => $isUpdateDisabled,
-    ]);
-}
     /**
      * Deletes an existing CsCarstickerApplication model.
      * If deletion is successful, the browser will be redirected to the 'index' page.
@@ -286,7 +392,6 @@ public function actionDirector()
 
         return $this->redirect(['index']);
     }
-
 
     /**
      * Finds the CsCarstickerApplication model based on its primary key value.
@@ -313,7 +418,9 @@ public function actionDirector()
             $approval = new CsCarstickerApproval([
                 'approval_date' => date('Y-m-d H:i:s'),
                 'status_id' => 1,
-                'user_id' => 22,  // Update with the appropriate user ID
+
+                'user_id' => 22,  // @Reuben Remember to make this dynamic after authentication feature
+
                 'remark' => 'Applied',
                 'application_id' => $application_id,
             ]);
@@ -343,6 +450,68 @@ public function actionDirector()
         Yii::info('All documents have locations for Application ID: ' . $application_id);
         return true; // All conditions are met
     }
+
+
+    // Renewing the application incase expired -->
+    // Get details from the QR code table to  see the expiry date and if expired --> forward to director to approve with the previous details
+    public function actionRenewApplication($qrcodeValue)
+    {
+        // Retrieve QR code details
+        $qrcodeDetails = CarstickerQrcode::find()
+            ->where(['qrcode_value' => $qrcodeValue])
+            ->with('carstickerApplication')
+            ->one();
+
+        if ($qrcodeDetails) {
+            // Use CsCarstickerApplicationSearch to search for the application details
+            $searchModel = new CsCarstickerApplicationSearch();
+            $searchModel->application_id = $qrcodeDetails->carstickerApplication->application_id;
+
+            $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
+
+            $applicationDetails = $dataProvider->getModels()[0] ?? null;
+
+            // First Check if the application is expired
+            if ($applicationDetails && strtotime($qrcodeDetails->expiry_date) < time()) {
+                // Create a new application record with the details of the previous application
+                $newApplication = new CsCarstickerApplication([
+                    'application_ref_no' => $applicationDetails->application_ref_no,
+                    'vehicle_regno' => $applicationDetails->vehicle_regno,
+                    'application_date' => date('Y-m-d H:i:s'),
+                    'application_type' => $applicationDetails->application_type,
+                    'user_id' => Yii::$app->user->id, // to use when a user is logged in
+                    // 'user_id' => 1
+                ]);
+
+                // Save the new application record
+                if ($newApplication->save()) {
+                    // Retrieve the documents associated with the previous application
+                    $previousDocuments = CsApplicationDocument::find()->where(['application_id' => $applicationDetails->application_id])->all();
+
+                    // Create new document records for the new application
+                    foreach ($previousDocuments as $previousDocument) {
+                        $newDocument = new CsApplicationDocument([
+                            'file' => $previousDocument->file,
+                            'document_location' => $previousDocument->document_location,
+                            'application_id' => $newApplication->application_id,
+                        ]);
+
+                        // Save the new document record
+                        $newDocument->save();
+                    }
+
+                    Yii::$app->session->setFlash('success', 'Application renewed successfully.');
+                    return $this->redirect(['index']);
+                } else {
+                    Yii::$app->session->setFlash('error', 'Failed to renew the application. Please check the form for errors.');
+                }
+            } else {
+                Yii::$app->session->setFlash('error', 'This application cannot be renewed.');
+            }
+        }
+    }
+
+
 
     // To get the status of application from the view status button
     public function actionViewStatus($application_id)
@@ -505,9 +674,5 @@ public function actionDissaproveApplication()
         // The model is not updated, handle the error, e.g., return an error response
         return ['success' => false, 'message' => 'There was an error approving the application.'];
     }
-
-}
-
-
 
 }

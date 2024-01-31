@@ -1,6 +1,7 @@
 <?php
 
 use app\modules\stickers\models\CsCarstickerApplication;
+
 use kartik\grid\GridView;
 use yii\grid\ActionColumn;
 use yii\helpers\Html;
@@ -19,8 +20,22 @@ use yii\helpers\Url;
         ['class' => 'kartik\grid\SerialColumn'],
         'application_ref_no',
         'vehicle_regno',
-        'application_date',
-        'applicationType.application_type',
+
+        // 'application_date',
+        [
+            'attribute' => 'application_date',
+            'value' => function ($model) {
+                // return date('Y-m-d', strtotime($model->application_date));
+                return date('F j, Y', strtotime($model->application_date));
+            },
+            // 'contentOptions' => ['class' => 'text-center'],
+        ],
+        [
+            'label' => 'Approval Remarks',
+            'value' => function ($model) {
+                return $model->latestApproval ? $model->latestApproval->remark : '';
+            },
+        ],
         [
             'class' => ActionColumn::className(),
             'template' => '{update} {view}',

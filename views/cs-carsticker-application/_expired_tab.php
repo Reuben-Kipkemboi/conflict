@@ -13,38 +13,31 @@ use yii\helpers\Url;
 ?>
 
 <?= GridView::widget([
-    'dataProvider' => $dataProvider,
+    'dataProvider' => $dataProvider,  // Assuming $dataProvider is configured to fetch only expired applications
     'filterModel' => $searchModel,
     'columns' => [
         ['class' => 'kartik\grid\SerialColumn'],
         'application_ref_no',
         'vehicle_regno',
-        // 'application_date',
         [
             'attribute' => 'application_date',
             'value' => function ($model) {
-                // return date('Y-m-d', strtotime($model->application_date));
                 return date('F j, Y', strtotime($model->application_date));
             },
-
+        ],
+        // 'applicationType.application_type',
         [
             'class' => ActionColumn::className(),
-            'template' => '{update} {view}',
+            'template' => '{renew} {view}',  // Change the template to include 'renew'
             'urlCreator' => function ($action, CsCarstickerApplication $model, $key, $index, $column) {
-                if ($action === 'update' && $model->isUpdateDisabled()) {
-                    return null; // Disable update button if model->isUpdateDisabled() returns true
+                if ($action === 'renew' && $model->isUpdateDisabled()) {
+                    return null; // Disable renew button if model->isUpdateDisabled() returns true
                 }
-                return Url::toRoute([$action, 'application_id' => $model->application_id]);
+                return Url::toRoute(['renew', 'application_id' => $model->application_id]); // Change the action to 'renew'
             },
-
-
             'buttons' => [
-                'update' => function ($url, $model, $key) {
-                    if ($model->isUpdateDisabled()) {
-                        return Html::tag('span', 'Update', ['class' => 'bi bi-pencil-square btn btn-outline-primary btn-sm', 'style' => 'visibility: hidden;']);
-
-                    }
-                    return Html::a('Update', ['/stickers/cs-carsticker-application/update', 'application_id' => $model->application_id], ['class' => 'bi bi-pencil-square btn btn-outline-primary btn-sm']);
+                'renew' => function ($url, $model, $key) {
+                    return Html::a('Renew Application', ['/stickers/cs-carsticker-application/renew', 'application_id' => $model->application_id], ['class' => 'bi bi-pencil-square btn btn-outline-primary btn-sm']);
                 },
                 'view' => function ($url, $model, $key) {
                     return Html::a('View Status', ['/stickers/cs-carsticker-application/view-status', 'application_id' => $model->application_id], ['class' => 'bi bi-eye btn btn-outline-info btn-sm']);
@@ -53,3 +46,4 @@ use yii\helpers\Url;
         ],
     ],
 ]); ?>
+

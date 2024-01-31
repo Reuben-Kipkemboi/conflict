@@ -75,7 +75,9 @@ $this->params['breadcrumbs'][] = $this->title;
 ?>
 
 <div class="cs-carsticker-application-index">
+
     <h2 class="text-center text-primary"><?= Html::encode($this->title) ?></h2>
+
     <p style="text-align:right;">
         <?= Html::a('Make an Application for a Car Sticker', ['create'], ['class' => 'btn btn-primary bi bi-send']) ?>
     </p>
@@ -83,36 +85,67 @@ $this->params['breadcrumbs'][] = $this->title;
     <?php
     $tabs = [
         [
-            'label' => '<span class="font-weight-bold fs-6 p-2 rounded mb-2">APPROVED APPLICATIONS</span>',
-            'content' => $this->render('_approved_tab', [
-                'searchModel' => $searchModel,
-                'dataProvider' => $searchModel->search(Yii::$app->request->queryParams, ['status_id' => 5]),
-            ]),
-            'active' => true,
-        ],
-        [
+
+//             'label' => '<span class="font-weight-bold fs-6 p-2 rounded mb-2">APPROVED APPLICATIONS</span>',
+//             'content' => $this->render('_approved_tab', [
+//                 'searchModel' => $searchModel,
+//                 'dataProvider' => $searchModel->search(Yii::$app->request->queryParams, ['status_id' => 5]),
+//             ]),
+//             'active' => true,
+//         ],
+//         [
+
             'label' => '<span class="font-weight-bold fs-6 p-2 rounded mb-2">APPLIED</span>',
             'content' => $this->render('_pending_tab', [
                 'searchModel' => $searchModel,
                 'dataProvider' => $searchModel->search(Yii::$app->request->queryParams, ['status_id' => 1]),
             ]),
+
+
+            // 'active' => true,
         ],
+
+
         [
             'label' => '<span class="font-weight-bold fs-6 p-2 rounded mb-2">RETURNED APPLICATIONS</span>',
             'content' => $this->render('_returned_tab', [
                 'searchModel' => $searchModel,
-                'dataProvider' => $searchModel->search(Yii::$app->request->queryParams, ['status_id' => 2]),
+
+//                 'dataProvider' => $searchModel->search(Yii::$app->request->queryParams, ['status_id' => 2]),
+//             ]),
+//         ],
+//     ];
+    
+// =======
+                'dataProvider' => $searchModel->search(Yii::$app->request->queryParams, ['status_id' => 3]),
+            ]), 
+        ],
+        [
+            'label' => '<span class="font-weight-bold fs-6 p-2 rounded mb-2">APPROVED APPLICATIONS</span>',
+            'content' => $this->render('_approved_tab', [
+                'searchModel' => $searchModel,
+                'dataProvider' => $searchModel->search(Yii::$app->request->queryParams, ['status_id' => 5]),
+                // 'dataProvider' => $searchModel->search(Yii::$app->request->queryParams, [4, 5]),
+                
+            ]),
+            
+        ],
+        [
+            'label' => '<span class="font-weight-bold fs-6 p-2 rounded mb-2">EXPIRED APPLICATIONS</span>',
+            'content' => $this->render('_expired_tab', [
+                'searchModel' => $searchModel,
+                'dataProvider' => $dataProviderExpired,  
             ]),
         ],
     ];
-    
+
+
     echo Tabs::widget([
         'items' => $tabs,
         'encodeLabels' => false,
     ]);
     ?>
 
+
 </div>
-
-
 

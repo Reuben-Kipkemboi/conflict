@@ -2,9 +2,12 @@
 
 namespace app\modules\stickers\models;
 
+
 use Yii;
 use app\modules\setup\models\CsApplicationType;
 use app\modules\setup\models\CsRequiredDocument;
+use app\modules\stickers\models\CarstickerQrcode;
+
 
 /**
  * This is the model class for table "csmis.cs_carsticker_application".
@@ -14,10 +17,13 @@ use app\modules\setup\models\CsRequiredDocument;
  * @property string $vehicle_regno
  * @property string $application_date
  * @property int $application_type
+
  * @property int $file
  */
 class CsCarstickerApplication extends \yii\db\ActiveRecord
 {
+
+    public $file;
     /**
      * {@inheritdoc}
      */
@@ -68,7 +74,6 @@ class CsCarstickerApplication extends \yii\db\ActiveRecord
         return $this->hasMany(CsApplicationDocument::class, ['application_id' => 'application_id']);
     }
 
-    
     public function getApproval()
     {
         return $this->hasOne(CsCarstickerApproval::class, ['application_id' => 'application_id']);
@@ -80,14 +85,13 @@ class CsCarstickerApplication extends \yii\db\ActiveRecord
             ->orderBy(['approval_date' => SORT_DESC]);
     }
 
-    public function isUpdateDisabled() {
-        // Disable update if status is 3, 4, or 5
-        return in_array($this->latestApproval->status_id, [3, 4, 5]);
+
+    public function isUpdateDisabled()
+    {
+        return in_array($this->latestApproval->status_id, [4, 5]);
     }
-    
-
-    
-  
-
-
+    // Check for expiry date  by getting the QR code for this application with application_id 
+    public function getQrcode()
+{
+    return $this->hasOne(CarstickerQrcode::class, ['application_id' => 'application_id']);
 }
